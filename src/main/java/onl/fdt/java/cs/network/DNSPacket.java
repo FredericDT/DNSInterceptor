@@ -482,11 +482,14 @@ public class DNSPacket {
 
         public class RDATA_SOA extends RDATA {
 
-            private RDATA_A() {
+            //TODO
+
+            private RDATA_SOA() {
             }
 
             @Override
             public byte[] getFullRDATABytes() {
+                return null;
             }
         }
 
