@@ -43,7 +43,7 @@ public class UDPClient {
 
             this.channel = ch;
 
-            this.channelWriteAndFlush(this.sendPacketBuf, Config.TARGET_DNS_SERVER_ADDRESS, Config.TARGET_DNS_SERVER_PORT);
+            this.channelWriteAndFlush(this.sendPacketBuf, Config.getTargetDnsServerAddress(), Config.getTargetDnsServerPort());
             ch.closeFuture().sync();
 
         } finally {

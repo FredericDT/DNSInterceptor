@@ -20,6 +20,9 @@ public class DNSPacketHandler extends SimpleChannelInboundHandler<DatagramPacket
             sb.append(String.format("%02x", in.getByte(i)));
         }
         LOGGER.debug(sb.toString());
+
+        LOGGER.debug(in.getShort(2) + " " + in.getShort(4));
+
         UDPClient udpClient = new UDPClient(channelHandlerContext, datagramPacket.sender(), in.copy());
         udpClient.run();
     }
