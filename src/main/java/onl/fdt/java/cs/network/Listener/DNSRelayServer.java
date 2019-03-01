@@ -32,8 +32,8 @@ public class DNSRelayServer {
                             }
                     );
 
-            ChannelFuture f = b.bind(new InetSocketAddress(Config.LISTEN_ADDRESS, Config.LISTEN_PORT)).sync(); // (7)
-            LOGGER.info("port " + Config.LISTEN_PORT + " bind success");
+            ChannelFuture f = b.bind(new InetSocketAddress(Config.getListenAddress(), Config.getListenPort())).sync(); // (7)
+            LOGGER.info("port " + Config.getListenPort() + " bind success");
 
             f.channel().closeFuture().sync();
         } finally {
