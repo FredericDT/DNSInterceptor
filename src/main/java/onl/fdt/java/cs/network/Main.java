@@ -9,7 +9,17 @@ public class Main {
     private static final Logger LOGGER = Logger.getLogger(Main.class);
 
     public static void main(String[] args) {
-        new CommandLine(Config.class).parse(args);
+
+        CommandLine commandLine = new CommandLine(Config.class);
+        commandLine.parse(args);
+
+        if (commandLine.isUsageHelpRequested()) {
+            commandLine.usage(System.out);
+            return;
+        } else if (commandLine.isVersionHelpRequested()) {
+            commandLine.printVersionHelp(System.out);
+            return;
+        }
 
         Config.initConfig();
 

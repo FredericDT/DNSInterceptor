@@ -14,13 +14,43 @@ public class DNSPacket {
 
     public DNSPacket(ByteBuf buf) {
         this.buf = buf.copy();
-        this.parseQuestionSection();
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < this.buf.readableBytes(); ++i) {
+            s.append(String.format("%02x", this.buf.getByte(i)));
+        }
+        LOGGER.debug("parsing packet: " + s.toString());
+        this.parseSections();
     }
 
-    private void parseQuestionSection() {
-        assert this.getQDCOUNT() == 1 || this.getQDCOUNT() == 0;
+    private void parseSections() {
+        LOGGER.debug("QRCOUNT: " + this.getQDCOUNT());
+        assert this.getQDCOUNT() == (short) 1 || this.getQDCOUNT() == (short) 0;
         if (this.getQDCOUNT() == 1) {
             this.questionSectionList.add(new QuestionSection(this.buf, 12));
+        }
+        int ancont = this.getANCOUNT();
+        int nscount = this.getNSCOUNT();
+        int arcount = this.getARCOUNT();
+        int i = 12 + (this.questionSectionList.isEmpty() ? 0 : this.questionSectionList.get(0).fullByteLength);
+        for (int j = 0; j < ancont; ++j) {
+            ResourceRecord rr = new ResourceRecord(this.buf, i);
+            this.answerSectionList.add(rr);
+            i += rr.fullByteLength;
+        }
+        for (int j = 0; j < nscount; ++j) {
+            ResourceRecord rr = new ResourceRecord(this.buf, i);
+            this.authoritySectionList.add(rr);
+            i += rr.fullByteLength;
+        }
+        for (int j = 0; j < arcount; ++j) {
+            try {
+                ResourceRecord rr = new ResourceRecord(this.buf, i);
+                this.additionalSectionList.add(rr);
+                i += rr.fullByteLength;
+            } catch (Exception e) {
+                LOGGER.warn("Parse AdditionalSection Error, dropped", e);
+                this.setARCOUNT((short) 0);
+            }
         }
     }
 
@@ -462,11 +492,11 @@ public class DNSPacket {
 
     public static class ResourceRecord {
 
-        private abstract class RDATA {
+        private static abstract class RDATA {
             public abstract byte[] getFullRDATABytes();
         }
 
-        public class RDATA_A extends RDATA {
+        public static class RDATA_A extends RDATA {
 
             private final byte[] address;
 
@@ -480,16 +510,24 @@ public class DNSPacket {
             }
         }
 
-        public class RDATA_SOA extends RDATA {
+        public static class RDATA_SOA extends RDATA {
 
-            //TODO
+            private final byte[] bytes;
 
-            private RDATA_SOA() {
+            private static final byte[] DOMAIN_NOT_FOUND_BYTES = new byte[]{
+                    0x01, 0x61, 0x0c, 0x72, 0x6f, 0x6f, 0x74, 0x2d, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x73, 0x03, 0x6e, 0x65, 0x74, 0x00, 0x05, 0x6e, 0x73, 0x74, 0x6c, 0x64, 0x0c, 0x76, 0x65, 0x72, 0x69, 0x73, 0x69, 0x67, 0x6e, 0x2d, 0x67, 0x72, 0x73, 0x03, 0x63, 0x6f, 0x6d, 0x00, 0x78, 0x57, (byte) 0xf4, (byte) 0xb8, 0x00, 0x00, 0x07, 0x08, 0x00, 0x00, 0x03, (byte) 0x84, 0x00, 0x09, 0x3a, (byte) 0x80, 0x00, 0x01, 0x51, (byte) 0x80,
+
+            };
+
+            public static final RDATA_SOA DOMAIN_NOT_FOUND = new RDATA_SOA(DOMAIN_NOT_FOUND_BYTES);
+
+            private RDATA_SOA(final byte[] bytes) {
+                this.bytes = bytes;
             }
 
             @Override
             public byte[] getFullRDATABytes() {
-                return null;
+                return this.bytes;
             }
         }
 
@@ -503,6 +541,8 @@ public class DNSPacket {
         private final int nameType;
         //TODO: implement every RDATA type
         private final byte[] rDATA;
+        public final int fullByteLength;
+        public final byte[] fullBytes;
 
         private byte[] readRDATABytesForBufSource() {
             byte[] t = new byte[rDLength];
@@ -522,8 +562,73 @@ public class DNSPacket {
             this.ttl = this.buf.getInt(startIndex + this.nameType + 4);
             this.rDLength = this.buf.getShort(startIndex + this.nameType + 8);
             this.rDATA = readRDATABytesForBufSource();
+            this.fullByteLength = this.nameType + 10 + this.rDATA.length;
+
+            this.fullBytes = buildFullBytes();
+        }
+
+        private byte[] buildFullBytes() {
+            byte[] t = new byte[this.fullByteLength];
+            int i = 0;
+            t[i++] = (byte) ((this.name & 0xff00) >> 4);
+            if (this.nameType == 2) {
+                t[i++] = (byte) (this.name & 0xff);
+            }
+            t[i++] = (byte) ((this.type.value & 0xff00) >> 4);
+            t[i++] = (byte) (this.type.value & 0xff);
+            t[i++] = (byte) ((this.rDClass.value & 0xff00) >> 4);
+            t[i++] = (byte) (this.rDClass.value & 0xff);
+            t[i++] = (byte) ((this.ttl & 0xff000000) >> 12);
+            t[i++] = (byte) ((this.ttl & 0xff0000) >> 8);
+            t[i++] = (byte) ((this.ttl & 0xff00) >> 4);
+            t[i++] = (byte) (this.ttl & 0xff);
+            t[i++] = (byte) ((this.rDLength & 0xff00) >> 4);
+            t[i++] = (byte) (this.rDLength & 0xff);
+            for (int j = 0; i < this.fullByteLength; ++i, ++j) {
+                t[i] = this.rDATA[j];
+            }
+            return t;
+        }
+
+        public ResourceRecord(final int startIndex,
+                              final short name,
+                              final TYPE type,
+                              final CLASS rDClass,
+                              final int ttl,
+                              final short rDLength,
+                              final byte[] rDATA) {
+            this.buf = null;
+            this.startIndex = startIndex;
+            this.name = name;
+            this.nameType = (this.name & 0xb0) == 0xb0 ? 2 : 1;
+            this.type = type;
+            this.rDClass = rDClass;
+            this.ttl = ttl;
+            this.rDLength = rDLength;
+            this.rDATA = rDATA;
+            this.fullByteLength = this.nameType + 10 + this.rDATA.length;
+
+            this.fullBytes = buildFullBytes();
         }
     }
+
+    public List<ResourceRecord> getAnswerSectionList() {
+        return answerSectionList;
+    }
+
+    public List<ResourceRecord> getAuthoritySectionList() {
+        return authoritySectionList;
+    }
+
+    public List<ResourceRecord> getAdditionalSectionList() {
+        return additionalSectionList;
+    }
+
+    private List<ResourceRecord> answerSectionList = new ArrayList<ResourceRecord>();
+
+    private List<ResourceRecord> authoritySectionList = new ArrayList<ResourceRecord>();
+
+    private List<ResourceRecord> additionalSectionList = new ArrayList<ResourceRecord>();
 
 
 }
