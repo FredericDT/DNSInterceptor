@@ -64,7 +64,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        onl.fdt.java.cs.Main
+                                        onl.fdt.java.cs.network.Main
                                     </mainClass>
                                 </manifest>
                             </archive>

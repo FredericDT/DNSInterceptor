@@ -1,6 +1,7 @@
 package onl.fdt.java.cs.network;
 
 import org.apache.log4j.Logger;
+import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 import java.io.File;
@@ -10,6 +11,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+@Command(description = "UDP DNS interceptor",
+        name = "DNSRelay",
+        mixinStandardHelpOptions = true,
+        version = "1.0-SNAPSHOT")
 public class Config {
 
     private static final Logger LOGGER = Logger.getLogger(Config.class);
@@ -36,6 +41,12 @@ public class Config {
 
     private static Map<String, byte[]> interceptDomainIPMap = new HashMap<String, byte[]>();
 
+    public static Map<String, byte[]> getInterceptDomainIPMap() {
+        return interceptDomainIPMap;
+    }
+
+    public static final byte[] BLOCK_DOMAIN_ADDRESS = {0, 0, 0, 0};
+
     public static void initConfig() {
         if (FILE == null) {
             LOGGER.info("--file parameter not set");
@@ -56,7 +67,7 @@ public class Config {
                 assert ip.length == 4;
                 byte[] ipBytes = new byte[ip.length];
                 for (int i = 0; i < ip.length; ++i) {
-                    ipBytes[i] = Byte.valueOf(ip[i]);
+                    ipBytes[i] = (byte) Short.parseShort(ip[i]);
                 }
                 interceptDomainIPMap.put(p[1], ipBytes);
             });
