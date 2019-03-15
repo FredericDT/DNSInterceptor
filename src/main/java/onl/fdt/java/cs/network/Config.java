@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 @Command(description = "UDP DNS interceptor",
         name = "DNSRelay",
         mixinStandardHelpOptions = true,
-        version = "1.0-SNAPSHOT")
+        version = "1.1-SNAPSHOT")
 public class Config {
 
     private static final Logger LOGGER = Logger.getLogger(Config.class);
