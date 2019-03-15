@@ -35,10 +35,6 @@ public class Config {
         return LISTEN_PORT;
     }
 
-    public static File getFile() {
-        return FILE;
-    }
-
     private static Map<String, byte[]> interceptDomainIPMap = new HashMap<String, byte[]>();
 
     public static Map<String, byte[]> getInterceptDomainIPMap() {

@@ -2,16 +2,17 @@ package onl.fdt.java.cs.network;
 
 import io.netty.buffer.Unpooled;
 import junit.framework.TestCase;
+import onl.fdt.java.cs.network.DNSPacket.DNSPacketImpl;
+import onl.fdt.java.cs.network.DNSPacket.sections.ResourceRecord;
+import onl.fdt.java.cs.network.DNSPacket.util.DomainByteUtil;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
-import org.junit.Test;
 
-import java.math.BigInteger;
 import java.util.List;
 
-public class DNSPacketTest extends TestCase {
+public class DNSPacketImplTest extends TestCase {
 
-    private static final Logger LOGGER = Logger.getLogger(DNSPacketTest.class);
+    private static final Logger LOGGER = Logger.getLogger(DNSPacketImplTest.class);
 
     private static final byte[] bytes_of_www_bupt_edu_cn = {
             0x03, 0x77,
@@ -74,37 +75,37 @@ public class DNSPacketTest extends TestCase {
     //    @Test
     public void testDomainNameBytesToString() {
 
-        String r = DNSPacket.domainNameBytesToString(Unpooled.wrappedBuffer(bytes_of_www_bupt_edu_cn), 0);
+        String r = DomainByteUtil.domainNameBytesToString(Unpooled.wrappedBuffer(bytes_of_www_bupt_edu_cn), 0);
         Assert.assertEquals(string_of_www_bupt_edu_cn, r);
     }
 
     //    @Test
     public void testDomainNameStringToBytes() {
-        byte[] i = DNSPacket.domainNameStringToBytes(string_of_www_bupt_edu_cn);
+        byte[] i = DomainByteUtil.domainNameStringToBytes(string_of_www_bupt_edu_cn);
         Assert.assertArrayEquals(bytes_of_www_bupt_edu_cn, i);
     }
 
     //    @Test
     public void testDNSPacket() {
-        DNSPacket dnsPacket = new DNSPacket(Unpooled.wrappedBuffer(full_dns_packet_byte));
-        LOGGER.debug(String.format("id: %d", dnsPacket.getID()));
-        Assert.assertEquals((short) 0xd892, dnsPacket.getID());
-        LOGGER.debug(String.format("rd: %b", dnsPacket.isRecursionDesired()));
-        Assert.assertEquals(true, dnsPacket.isRecursionDesired());
-        String domainName = dnsPacket.getQuestionSectionList().get(0).domainName;
+        DNSPacketImpl dnsPacketImpl = new DNSPacketImpl(Unpooled.wrappedBuffer(full_dns_packet_byte));
+        LOGGER.debug(String.format("id: %d", dnsPacketImpl.getID()));
+        Assert.assertEquals((short) 0xd892, dnsPacketImpl.getID());
+        LOGGER.debug(String.format("rd: %b", dnsPacketImpl.isRecursionDesired()));
+        Assert.assertEquals(true, dnsPacketImpl.isRecursionDesired());
+        String domainName = dnsPacketImpl.getQuestionSectionList().get(0).getDomainName();
         LOGGER.debug(String.format("domain: %s", domainName));
         Assert.assertEquals("www.bupt.edu.cn", domainName);
     }
 
     //    @Test
     public void testNOTExistDNSPacket() {
-        DNSPacket dnsPacket = new DNSPacket(Unpooled.wrappedBuffer(not_exist_dns_packet_byte));
-        List<DNSPacket.ResourceRecord> al = dnsPacket.getAuthoritySectionList();
+        DNSPacketImpl dnsPacketImpl = new DNSPacketImpl(Unpooled.wrappedBuffer(not_exist_dns_packet_byte));
+        List<? extends ResourceRecord> al = dnsPacketImpl.getAuthoritySectionList();
         LOGGER.debug("al.size: " + al.size());
         if (al.size() > 0) {
-            DNSPacket.ResourceRecord rr = al.get(0);
-            LOGGER.debug("al[0].rr.length: " + rr.fullByteLength);
-            byte[] rr_rdata = rr.fullBytes;
+            ResourceRecord rr = al.get(0);
+            LOGGER.debug("al[0].rr.length: " + rr.getFullByteLength());
+            byte[] rr_rdata = rr.getFullBytes();
             StringBuilder s = new StringBuilder();
             for (int i = 0; i < rr_rdata.length; ++i) {
                 s.append(String.format("%02x", rr_rdata[i]));
