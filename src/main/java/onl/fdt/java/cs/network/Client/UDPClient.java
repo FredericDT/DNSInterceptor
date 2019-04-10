@@ -44,7 +44,7 @@ public class UDPClient {
             this.channel = ch;
 
             this.channelWriteAndFlush(this.sendPacketBuf, Config.getTargetDnsServerAddress(), Config.getTargetDnsServerPort());
-            ch.closeFuture().sync();
+            ch.closeFuture().await(5000);
 
         } finally {
             group.shutdownGracefully();

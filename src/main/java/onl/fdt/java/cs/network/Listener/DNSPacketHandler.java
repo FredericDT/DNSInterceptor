@@ -60,6 +60,7 @@ public class DNSPacketHandler extends SimpleChannelInboundHandler<DatagramPacket
                     }
                     channelHandlerContext.writeAndFlush(new DatagramPacket(rPacket.getRawByteBuf(), datagramPacket.sender()));
                 } else {
+                    LOGGER.debug(domain + " not in interceptDoaminIPMap relay it");
                     relay(channelHandlerContext, datagramPacket, in);
                 }
             } else {
