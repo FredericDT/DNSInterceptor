@@ -28,6 +28,7 @@ public class DNSRelayServer {
                                 @Override
                                 public void initChannel(NioDatagramChannel ch) throws Exception {
                                     ch.pipeline().addLast(new DNSPacketHandler());
+                                    // Handle incoming query packets
                                 }
                             }
                     );

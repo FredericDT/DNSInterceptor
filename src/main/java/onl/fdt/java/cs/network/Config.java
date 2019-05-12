@@ -43,14 +43,17 @@ public class Config {
 
     public static final byte[] BLOCK_DOMAIN_ADDRESS = {0, 0, 0, 0};
 
+    /**
+     * initialize intercept map from file
+     */
     public static void initConfig() {
         if (FILE == null) {
-            LOGGER.info("--file parameter not set");
+            LOGGER.warn("--file parameter not set");
             return;
         }
 
         if (!FILE.exists()) {
-            LOGGER.info("file " + FILE.getAbsolutePath() + " not found");
+            LOGGER.warn("file " + FILE.getAbsolutePath() + " not found");
             return;
         }
 
@@ -73,14 +76,33 @@ public class Config {
         }
     }
 
+    /**
+     * upstream dns server udp address
+     */
     @Option(names = {"--target-address"})
     private static String TARGET_DNS_SERVER_ADDRESS = "8.8.8.8";
+
+    /**
+     * upstream dns server udp port
+     */
     @Option(names = {"--target-port"})
     private static int TARGET_DNS_SERVER_PORT = 53;
+
+    /**
+     * listen udp address
+     */
     @Option(names = {"--bind-address"})
     private static String LISTEN_ADDRESS = "127.0.0.1";
+
+    /**
+     * listen udp port
+     */
     @Option(names = {"--bind-port"})
     private static int LISTEN_PORT = 5153;
+
+    /**
+     * intercept config file path
+     */
     @Option(names = {"--file"})
     private static File FILE;
 

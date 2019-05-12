@@ -15,6 +15,10 @@ public class DNSPacketImpl implements DNSPacket {
 
     private ByteBuf buf;
 
+    /**
+     * Parse from ray bytes
+     * @param buf
+     */
     public DNSPacketImpl(ByteBuf buf) {
         this.buf = buf.copy();
         StringBuilder s = new StringBuilder();
