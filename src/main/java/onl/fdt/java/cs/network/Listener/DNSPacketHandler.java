@@ -26,6 +26,8 @@ public class DNSPacketHandler extends SimpleChannelInboundHandler<DatagramPacket
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, DatagramPacket datagramPacket) throws Exception {
 
         ByteBuf in = datagramPacket.content();
+
+        // Print debug packet info
         StringBuilder sb = new StringBuilder("Received Message: ");
         for (int i = 0; i < in.readableBytes(); ++i) {
             sb.append(String.format("%02x", in.getByte(i)));
@@ -39,6 +41,8 @@ public class DNSPacketHandler extends SimpleChannelInboundHandler<DatagramPacket
             DNSPacket packet = new DNSPacketImpl(in);
             if (packet.getQDCOUNT() != 0) {
                 QuestionSection qs = packet.getQuestionSectionList().get(0);
+                // Process the question section like BIND, refer https://www.isc.org/downloads/bind/
+                // which means, support only one query per packet
                 String domain = qs.getDomainName();
                 LOGGER.debug("querying domain: " + domain);
                 if (Config.getInterceptDomainIPMap().containsKey(domain)) {
@@ -48,11 +52,13 @@ public class DNSPacketHandler extends SimpleChannelInboundHandler<DatagramPacket
                     rPacket.getRawByteBuf().writerIndex(12 + qs.getFullByteLength());
                     rPacket.getRawByteBuf().setByte(2, 0x81);
                     if (Arrays.equals(address, Config.BLOCK_DOMAIN_ADDRESS)) {
+                        // Set domain status not found
                         // DO NOT ASK ME WHY
                         rPacket.getRawByteBuf().setByte(3, 0xa3);
                         rPacket.setARCOUNT((short) 1);
                         rPacket.getRawByteBuf().writeBytes(new ResourceRecordImpl(0, (short) 0, TYPE.SOA, CLASS.IN, 0, (short) 0x40, RDATA_SOA.DOMAIN_NOT_FOUND.getFullRDATABytes()).getFullBytes());
                     } else {
+                        // Set pre-set ip address
                         // DO NOT ASK ME WHY
                         rPacket.getRawByteBuf().setByte(3, 0x80);
                         rPacket.setANCOUNT((short) 1);
@@ -64,6 +70,7 @@ public class DNSPacketHandler extends SimpleChannelInboundHandler<DatagramPacket
                     relay(channelHandlerContext, datagramPacket, in);
                 }
             } else {
+                // QDCOUNT == 0, cannot parse, must relay
                 relay(channelHandlerContext, datagramPacket, in);
             }
         } catch (Exception e) {
@@ -73,6 +80,16 @@ public class DNSPacketHandler extends SimpleChannelInboundHandler<DatagramPacket
 
     }
 
+    /**
+     *
+     * @param channelHandlerContext
+     * @param datagramPacket raw data packet to get sender
+     * @param in raw packet data
+     * @throws Exception
+     *
+     * Forward the data packet to upstream DNS server
+     * then feed the response to the client
+     */
     private void relay(ChannelHandlerContext channelHandlerContext, DatagramPacket datagramPacket, ByteBuf in) throws Exception {
         UDPClient udpClient = new UDPClient(channelHandlerContext, datagramPacket.sender(), in.copy());
         udpClient.run();

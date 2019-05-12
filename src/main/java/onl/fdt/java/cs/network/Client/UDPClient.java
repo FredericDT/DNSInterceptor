@@ -21,6 +21,12 @@ public class UDPClient {
     final private InetSocketAddress sender;
     final private ByteBuf sendPacketBuf;
 
+    /**
+     *
+     * @param ctx Context to be return the response to
+     * @param sender
+     * @param sendPacketBuf
+     */
     public UDPClient(ChannelHandlerContext ctx, InetSocketAddress sender, ByteBuf sendPacketBuf) {
         this.ctx = ctx;
         this.sender = sender;

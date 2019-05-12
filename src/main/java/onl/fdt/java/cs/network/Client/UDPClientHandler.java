@@ -29,6 +29,7 @@ public class UDPClientHandler extends SimpleChannelInboundHandler<DatagramPacket
         }
         LOGGER.debug(sb.toString());
 
+        // Relay response data
         this.ctx.writeAndFlush(new DatagramPacket(in.copy(), sender));
 
         channelHandlerContext.close();

@@ -7,6 +7,13 @@ public class DomainByteUtil {
 
     private static final Logger LOGGER = Logger.getLogger(DomainByteUtil.class);
 
+    /**
+     * Parse domain from Bytes to String
+     *
+     * @param buf
+     * @param startIndex
+     * @return
+     */
     public static String domainNameBytesToString(ByteBuf buf, int startIndex) {
         StringBuilder ts = new StringBuilder();
         for (int i = 0; i < buf.readableBytes(); ++i) {
@@ -31,6 +38,11 @@ public class DomainByteUtil {
         throw new IllegalStateException("DNSPacketImpl not complete");
     }
 
+    /**
+     * Build domain bytes from String
+     * @param name
+     * @return
+     */
     public static byte[] domainNameStringToBytes(String name) {
         final int l = name.length() + 2;
         final String[] nameArray = name.split("\\.");
